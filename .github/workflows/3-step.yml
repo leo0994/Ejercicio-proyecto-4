@@ -1,0 +1,46 @@
+name: Paso 3 — rememberSaveable
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'shared/src/commonMain/kotlin/io/github/kevinah95/myapplication/screens/ContadorScreen.kt'
+
+jobs:
+  check_step_3:
+    name: Verificar Paso 3
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verificar uso de rememberSaveable en ContadorScreen.kt
+        id: check
+        run: |
+          FILE="shared/src/commonMain/kotlin/io/github/kevinah95/myapplication/screens/ContadorScreen.kt"
+
+          if ! grep -q "rememberSaveable" "$FILE"; then
+            echo "⏭️ Paso 3 aún no completado — 'rememberSaveable' no encontrado."
+            exit 0
+          fi
+
+          echo "✅ rememberSaveable detectado correctamente."
+          echo "result=success" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar Paso 4 en el issue
+        if: steps.check.outputs.result == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUMBER=$(gh issue list --label "ejercicio" --state open --json number --jq '.[0].number')
+          if [ -z "$ISSUE_NUMBER" ]; then
+            echo "⏭️ No hay issue de ejercicio abierto — omitiendo comentario."
+            exit 0
+          fi
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "$(cat .github/steps/4-step.md)"

@@ -1,0 +1,43 @@
+name: Paso 1 — Variables comunes
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'shared/src/commonMain/kotlin/io/github/kevinah95/myapplication/screens/ContadorScreen.kt'
+
+jobs:
+  check_step_1:
+    name: Verificar Paso 1
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verificar que ContadorScreen.kt tiene un comentario sobre var
+        id: check
+        run: |
+          FILE="shared/src/commonMain/kotlin/io/github/kevinah95/myapplication/screens/ContadorScreen.kt"
+          if grep -q "var count = 0" "$FILE"; then
+            echo "result=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "⏭️ Paso 1 aún no completado — esperando que el archivo tenga 'var count = 0'."
+          fi
+
+      - name: Publicar Paso 2 en el issue
+        if: steps.check.outputs.result == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUMBER=$(gh issue list --label "ejercicio" --state open --json number --jq '.[0].number')
+          if [ -z "$ISSUE_NUMBER" ]; then
+            echo "⏭️ No hay issue de ejercicio abierto — omitiendo comentario."
+            exit 0
+          fi
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "$(cat .github/steps/2-step.md)"
